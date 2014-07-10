@@ -4,6 +4,7 @@
 	    SASLAuthentication XMPPConnection XMPPException PacketListener]
 	   [org.jivesoftware.smack.packet
             Message Presence Presence$Type Message$Type]
+     [org.jivesoftware.smack.tcp XMPPTCPConnection]
 	   [org.jivesoftware.smack.filter MessageTypeFilter]
 	   [org.jivesoftware.smack.util StringUtils]))
 
@@ -22,7 +23,7 @@
     nil
     {:code (.getCode e) :message (.getMessage e)}))
 
-(defn message->map [#^Message m]
+(defn message->map [^Message m]
   (try
    {:body (.getBody m)
     :subject (.getSubject m)
@@ -35,7 +36,7 @@
     :type (keyword (str (.getType m)))}
    (catch Exception e (println e) {})))
 
-(defn parse-address [from]
+(defn parse-address [^String from]
   (try
    (first (.split from "/"))
    (catch Exception e (println e) from)))
@@ -49,12 +50,12 @@
      rep)
    (catch Exception e (println e))))
 
-(defn reply [from-message-map to-message-body conn]
+(defn reply [from-message-map to-message-body ^XMPPConnection conn]
   (.sendPacket conn (create-reply from-message-map to-message-body)))
 
 (defn with-message-map [handler]
   (fn [conn packet]
-    (let [message (message->map #^Message packet)]
+    (let [message (message->map ^Message packet)]
       (try
        (handler conn message)
        (catch Exception e (println e))))))
@@ -94,12 +95,12 @@
    "
   [connect-info packet-processor]
   (let [un (:username connect-info)
-	pw (:password connect-info)
-	host (:host connect-info)
-	domain (:domain connect-info)
-        port (get connect-info :port 5222)
+	^String pw (:password connect-info)
+	^String host (:host connect-info)
+	^String domain (:domain connect-info)
+  ^Integer port (get connect-info :port 5222)
 	connect-config (ConnectionConfiguration. host port domain)
-	conn (XMPPConnection. connect-config)]
+	conn (XMPPTCPConnection. connect-config)]
     (if-not (and un pw host domain)
       (throw (Exception. "Required connection params not provided (:username :password :host :domain)")))
     (.connect conn)
@@ -117,6 +118,6 @@
      chat-message-type-filter)
     conn))
 
-(defn stop [#^XMPPConnection conn]
+(defn stop [^XMPPConnection conn]
   (when conn
     (.disconnect conn)))
