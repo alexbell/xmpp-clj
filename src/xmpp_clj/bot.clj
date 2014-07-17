@@ -6,7 +6,8 @@
             Message Presence Presence$Type Message$Type]
      [org.jivesoftware.smack.tcp XMPPTCPConnection]
 	   [org.jivesoftware.smack.filter MessageTypeFilter]
-	   [org.jivesoftware.smack.util StringUtils]))
+	   [org.jivesoftware.smack.util StringUtils]
+     [java.util TimerTask Timer]))
 
 (def available-presence (Presence. Presence$Type/available))
 
@@ -17,6 +18,14 @@
       [PacketListener] 
       []
     (processPacket [packet] (processor conn packet))))
+
+(defn send-heartbeat [^XMPPConnection conn]
+  (.sendPacket conn available-presence))
+
+(defn schedule-heartbeat [^XMPPConnection conn]
+(let [task (proxy [TimerTask] []
+  (run [] (send-heartbeat conn)))]
+    (. (new Timer) (schedule task (long (* 20 1000)) (long (* 20 1000))))))
 
 (defn error->map [e]
   (if (nil? e) 
@@ -47,6 +56,7 @@
 	 rep (Message.)]
      (.setTo rep to)
      (.setBody rep (str to-message-body))
+     (.setType rep Message$Type/chat)
      rep)
    (catch Exception e (println e))))
 
@@ -111,7 +121,8 @@
                                 un
                                 " / "
                                 (apply str (take (count pw) (repeat "*"))))))))
-    (.sendPacket conn available-presence)
+    (send-heartbeat conn)
+    (schedule-heartbeat conn)
     (.addPacketListener
      conn
      (packet-listener conn (with-message-map (wrap-responder packet-processor)))

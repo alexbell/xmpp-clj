@@ -1,4 +1,4 @@
-(defproject xmpp-clj "0.3.1"
+(defproject xmpp-clj "0.4.0"
   :description "A lightweight clojure wrapper around the smack jabber/XMPP library"
   :dependencies [[org.clojure/clojure "1.6.0"]
 		 [org.igniterealtime.smack/smack-core "4.0.0"]
